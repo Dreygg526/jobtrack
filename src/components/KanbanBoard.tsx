@@ -24,12 +24,12 @@ export default function KanbanBoard({
   const rate = total > 0 ? Math.round((byStage.offer / total) * 100) : 0
 
   const stats = [
-    { label: 'Total Applied', value: total },
-    { label: 'Screening', value: byStage.screening },
-    { label: 'Interviews', value: byStage.interview },
-    { label: 'Offers', value: byStage.offer },
-    { label: 'Offer Rate', value: rate + '%' },
-  ]
+  { label: 'Applied', value: total },
+  { label: 'Screening', value: byStage.screening },
+  { label: 'Interview', value: byStage.interview },
+  { label: 'Offers', value: byStage.offer },
+  { label: 'Offer Rate', value: rate + '%' },
+]
 
   async function onDragEnd(result: DropResult) {
     if (!result.destination) return
@@ -80,18 +80,19 @@ export default function KanbanBoard({
   return (
     <div>
       {/* Stats — 3 cols on mobile, 5 on desktop */}
-      <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-4 mb-6 md:mb-8">
-        {stats.map(s => (
-          <div key={s.label} className="rounded-xl p-3 md:p-4"
-            style={{ backgroundColor: '#2d3e50' }}>
-            <p className="text-xs uppercase tracking-wide mb-1 truncate"
-              style={{ color: '#6dbfb8' }}>
-              {s.label}
-            </p>
-            <p className="text-xl md:text-3xl font-bold text-white">{s.value}</p>
-          </div>
-        ))}
-      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 mb-6 md:mb-8">
+  {stats.map(s => (
+    <div key={s.label}
+      className={`rounded-xl p-3 md:p-4 ${s.label === 'Offer Rate' ? 'col-span-2 md:col-span-1' : ''}`}
+      style={{ backgroundColor: '#2d3e50' }}>
+      <p className="text-xs uppercase tracking-wide mb-1"
+        style={{ color: '#6dbfb8' }}>
+        {s.label}
+      </p>
+      <p className="text-xl md:text-3xl font-bold text-white">{s.value}</p>
+    </div>
+  ))}
+</div>
 
       {/* Pipeline Header */}
       <div className="flex justify-between items-center mb-4">
