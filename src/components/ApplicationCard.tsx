@@ -1,5 +1,5 @@
 'use client'
-import { Application, WorkType } from '@/types'
+import { Application, WorkType, Stage, STAGES, STAGE_LABELS } from '@/types'
 import { useState } from 'react'
 
 const TYPE_COLORS = {
@@ -12,16 +12,19 @@ export default function ApplicationCard({
   app,
   onDelete,
   onUpdate,
+  onMove,
 }: {
   app: Application
   onDelete: (id: string) => void
   onUpdate: (updated: Application) => void
+  onMove: (id: string, stage: Stage) => void
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [company, setCompany] = useState(app.company)
   const [role, setRole] = useState(app.role)
   const [workType, setWorkType] = useState<WorkType>(app.work_type)
   const [loading, setLoading] = useState(false)
+  const [showMove, setShowMove] = useState(false)
 
   async function handleSave() {
     setLoading(true)
@@ -35,6 +38,8 @@ export default function ApplicationCard({
     setIsEditing(false)
     setLoading(false)
   }
+
+  const otherStages = STAGES.filter(s => s !== app.stage)
 
   if (isEditing) {
     return (
@@ -104,7 +109,35 @@ export default function ApplicationCard({
           </button>
         </div>
       </div>
-      <p className="text-xs text-slate-400 mt-1">{app.applied_date}</p>
+      <p className="text-xs text-slate-400 mt-1 mb-2">{app.applied_date}</p>
+
+      {/* Move to dropdown — mobile only */}
+      <div className="md:hidden relative">
+        <button
+          onClick={() => setShowMove(!showMove)}
+          className="w-full text-xs py-1.5 px-3 rounded-lg border font-medium flex items-center justify-between"
+          style={{ borderColor: '#6dbfb8', color: '#6dbfb8' }}
+        >
+          <span>Move to</span>
+          <span>{showMove ? '▲' : '▼'}</span>
+        </button>
+        {showMove && (
+          <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border rounded-lg shadow-lg z-10 overflow-hidden">
+            {otherStages.map(stage => (
+              <button
+                key={stage}
+                onClick={() => {
+                  onMove(app.id, stage)
+                  setShowMove(false)
+                }}
+                className="w-full text-left text-xs px-3 py-2 hover:bg-slate-50 text-slate-700 border-b last:border-0"
+              >
+                {STAGE_LABELS[stage]}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

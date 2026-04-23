@@ -24,11 +24,11 @@ export default function KanbanBoard({
   const rate = total > 0 ? Math.round((byStage.offer / total) * 100) : 0
 
   const stats = [
-    { label: 'Total', value: total },
+    { label: 'Total Applied', value: total },
     { label: 'Screening', value: byStage.screening },
     { label: 'Interviews', value: byStage.interview },
     { label: 'Offers', value: byStage.offer },
-    { label: 'Rate', value: rate + '%' },
+    { label: 'Offer Rate', value: rate + '%' },
   ]
 
   async function onDragEnd(result: DropResult) {
@@ -59,6 +59,16 @@ export default function KanbanBoard({
     setApps(prev => prev.map(a => a.id === updated.id ? updated : a))
   }
 
+  async function handleMove(id: string, stage: Stage) {
+    setApps(prev => prev.map(a => a.id === id ? { ...a, stage } : a))
+    setActiveStage(stage)
+    await fetch(`/api/applications/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stage }),
+    })
+  }
+
   const STAGE_COLORS: Record<Stage, string> = {
     applied: '#6dbfb8',
     screening: '#f0a500',
@@ -69,12 +79,13 @@ export default function KanbanBoard({
 
   return (
     <div>
-      {/* Stats */}
-      <div className="grid grid-cols-5 gap-2 md:gap-4 mb-6 md:mb-8">
+      {/* Stats — 3 cols on mobile, 5 on desktop */}
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-4 mb-6 md:mb-8">
         {stats.map(s => (
-          <div key={s.label} className="rounded-xl p-3 md:p-4 text-white"
+          <div key={s.label} className="rounded-xl p-3 md:p-4"
             style={{ backgroundColor: '#2d3e50' }}>
-            <p className="text-xs uppercase tracking-wide mb-1 truncate" style={{ color: '#6dbfb8' }}>
+            <p className="text-xs uppercase tracking-wide mb-1 truncate"
+              style={{ color: '#6dbfb8' }}>
               {s.label}
             </p>
             <p className="text-xl md:text-3xl font-bold text-white">{s.value}</p>
@@ -95,7 +106,7 @@ export default function KanbanBoard({
       </div>
 
       {/* Mobile Stage Tabs */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-2 md:hidden">
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2 md:hidden scrollbar-hide">
         {STAGES.map(stage => (
           <button
             key={stage}
@@ -112,18 +123,18 @@ export default function KanbanBoard({
         ))}
       </div>
 
-      {/* Kanban — Desktop: all columns, Mobile: single active column */}
       <DragDropContext onDragEnd={onDragEnd}>
-
-        {/* Desktop */}
+        {/* Desktop — all 5 columns */}
         <div className="hidden md:grid grid-cols-5 gap-4">
           {STAGES.map(stage => (
             <div key={stage} className="rounded-xl p-3"
               style={{ backgroundColor: '#f5f7fa', border: '1px solid #e2e8f0' }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: STAGE_COLORS[stage] }} />
-                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#2d3e50' }}>
+                  <div className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: STAGE_COLORS[stage] }} />
+                  <span className="text-xs font-semibold uppercase tracking-wide"
+                    style={{ color: '#2d3e50' }}>
                     {STAGE_LABELS[stage]}
                   </span>
                 </div>
@@ -134,12 +145,19 @@ export default function KanbanBoard({
               </div>
               <Droppable droppableId={stage}>
                 {(provided) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps} className="min-h-[200px]">
+                  <div ref={provided.innerRef} {...provided.droppableProps}
+                    className="min-h-[200px]">
                     {apps.filter(a => a.stage === stage).map((app, index) => (
                       <Draggable key={app.id} draggableId={app.id} index={index}>
                         {(provided) => (
-                          <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                            <ApplicationCard app={app} onDelete={handleDelete} onUpdate={handleUpdate} />
+                          <div ref={provided.innerRef} {...provided.draggableProps}
+                            {...provided.dragHandleProps}>
+                            <ApplicationCard
+                              app={app}
+                              onDelete={handleDelete}
+                              onUpdate={handleUpdate}
+                              onMove={handleMove}
+                            />
                           </div>
                         )}
                       </Draggable>
@@ -152,7 +170,7 @@ export default function KanbanBoard({
           ))}
         </div>
 
-        {/* Mobile — show only active stage */}
+        {/* Mobile — single active column */}
         <div className="md:hidden">
           <Droppable droppableId={activeStage}>
             {(provided) => (
@@ -160,13 +178,21 @@ export default function KanbanBoard({
                 className="rounded-xl p-3 min-h-[300px]"
                 style={{ backgroundColor: '#f5f7fa', border: '1px solid #e2e8f0' }}>
                 {apps.filter(a => a.stage === activeStage).length === 0 && (
-                  <p className="text-center text-sm text-slate-400 mt-8">No applications here</p>
+                  <p className="text-center text-sm text-slate-400 mt-8">
+                    No applications here
+                  </p>
                 )}
                 {apps.filter(a => a.stage === activeStage).map((app, index) => (
                   <Draggable key={app.id} draggableId={app.id} index={index}>
                     {(provided) => (
-                      <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                        <ApplicationCard app={app} onDelete={handleDelete} onUpdate={handleUpdate} />
+                      <div ref={provided.innerRef} {...provided.draggableProps}
+                        {...provided.dragHandleProps}>
+                        <ApplicationCard
+                          app={app}
+                          onDelete={handleDelete}
+                          onUpdate={handleUpdate}
+                          onMove={handleMove}
+                        />
                       </div>
                     )}
                   </Draggable>
@@ -176,7 +202,6 @@ export default function KanbanBoard({
             )}
           </Droppable>
         </div>
-
       </DragDropContext>
 
       {showModal && (
